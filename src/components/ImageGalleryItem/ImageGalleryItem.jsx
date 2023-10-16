@@ -1,49 +1,40 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
 import { GalleryListItem, GalleryListImage } from './ImageGalleryItem.styled';
 import { CustomModal } from '../Modal/Modal';
 
-export class ImageGalleryItem extends Component {
-  state = {
-    isModalOpen: false,
-    isLoadingImage: false,
-  };
-
-  openModal = () => {
-    this.setState({ isModalOpen: true, isLoadingImage: true });
-
+export const ImageGalleryItem = ({
+  image: { webformatURL, largeImageURL },
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  // Відкриття модалки
+  const openModal = () => {
+    setIsModalOpen(true);
+    setIsLoadingImage(true);
     const largeImage = new Image();
     largeImage.onload = () => {
-      this.setState({ isLoadingImage: false });
+      setIsLoadingImage(false);
     };
     largeImage.onerror = () => {
-      this.setState({ isLoadingImage: false });
+      setIsLoadingImage(false);
       console.error('Error loading image');
     };
-    largeImage.src = this.props.image.largeImageURL;
+    largeImage.src = largeImageURL;
   };
+  // Закриття модалки
+  const closeModal = () => setIsModalOpen(false);
 
-  closeModal = () => this.setState({ isModalOpen: false });
-
-  render() {
-    const { image } = this.props;
-    const { isLoadingImage, isModalOpen } = this.state;
-
-    return (
-      <>
-        <GalleryListItem>
-          <GalleryListImage
-            onClick={this.openModal}
-            src={image.webformatURL}
-            alt={''}
-          />
-          <CustomModal
-            isOpen={isModalOpen}
-            onRequestClose={this.closeModal}
-            isLoadingImage={isLoadingImage}
-            imageURL={image.largeImageURL}
-          />
-        </GalleryListItem>
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <GalleryListItem>
+        <GalleryListImage onClick={openModal} src={webformatURL} alt={''} />
+        <CustomModal
+          isOpen={isModalOpen}
+          onRequestClose={closeModal}
+          isLoadingImage={isLoadingImage}
+          imageURL={largeImageURL}
+        />
+      </GalleryListItem>
+    </>
+  );
+};

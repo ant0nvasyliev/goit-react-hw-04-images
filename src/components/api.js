@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 // Встановлення базової URL для всіх HTTP-запитів до API
 axios.defaults.baseURL = 'https://pixabay.com/api/';
@@ -11,19 +11,18 @@ const perPage = 12;
 
 // Функція для отримання зображень з API
 export const getImages = async (query, page) => {
-// Вирізаємо ідентифікатор запиту
-   const trimmedRequest = query.slice(query.indexOf('/') + 1);
-   // Виконуємо запит до API Pixabay з вказаними параметрами
-   const response = await axios.get(
-      `?key=${API_KEY}&q=${trimmedRequest}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`
-   );
-   return response.data; // Повертаємо дані відповіді з API
+  // Вирізаємо ідентифікатор запиту
+  const trimmedRequest = query.slice(query.indexOf('/') + 1);
+  // Виконуємо запит до API Pixabay з вказаними параметрами
+  const response = await axios.get(
+    `?key=${API_KEY}&q=${trimmedRequest}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`
+  );
+
+  return response.data; // Повертаємо дані відповіді з API
 };
-
-
 // Функція для нормалізації масиву зображень
 export const normalizedImages = imagesArray =>
-   imagesArray.map(({ id, webformatURL, largeImageURL }) => {
-     // У відповіді від апі приходить масив об'єктів, в яких тобі цікаві лише наступні властивості
-      return { id, webformatURL, largeImageURL };
-   });
+  imagesArray.map(({ id, webformatURL, largeImageURL }) => {
+    // У відповіді від апі приходить масив об'єктів, в яких тобі цікаві лише наступні властивості
+    return { id, webformatURL, largeImageURL };
+  });

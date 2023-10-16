@@ -1,121 +1,92 @@
-import { Component } from 'react';
-import SearchBar from './Searchbar/Searchbar'; 
-import * as API from './api'; 
-import { ImageGallery } from './ImageGallery/ImageGallery'; 
-import { Loader } from './Loader/Loader'; 
-import { Button } from './Button/Button'; 
+import { useState, useEffect } from 'react';
+import { SearchBar } from './Searchbar/Searchbar';
+import * as API from './api';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Loader } from './Loader/Loader';
+import { Button } from './Button/Button';
 import { ToastContainer, toast, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AppWrapper } from './App.styled';
 
-export default class App extends Component {
-  state = {
-    searchName: '', // Запит для пошуку
-    images: [], // Зображення
-    currentPage: 1, // Поточний номер сторінки
-    error: null, // Помилка
-    isLoading: false, // Індикатор завантаження зображень
-    totalPages: 0, // Загальна кількість сторінок
+export const App = () => {
+  const [searchName, setSearchName] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [images, setImages] = useState([]);
+
+  useEffect(() => {
+    const addImages = async () => {
+      setIsLoading(true);
+
+      try {
+        const data = await API.getImages(searchName, currentPage);
+
+        if (data.hits.length === 0) {
+          toast.dismiss();
+          toast.info('Зображень не знайдено.', {
+            position: toast.POSITION.TOP_RIGHT,
+          });
+          return;
+        }
+
+        setTotalPages(data.total_pages);
+        const normalizedImages = API.normalizedImages(data.hits);
+
+        setImages(prevImages => [...prevImages, ...normalizedImages]);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (searchName === '') return;
+    addImages();
+  }, [searchName, currentPage]);
+
+  const loadMore = () => {
+    setCurrentPage(currentPage + 1);
   };
 
-  componentDidUpdate(_, prevState) {
-    // Перевіряємо, чи змінився запит або номер сторінки
-    if (
-      prevState.searchName !== this.state.searchName ||
-      prevState.currentPage !== this.state.currentPage
-    ) {
-      this.addImages(); // Отримуємо та додаємо зображення до стану
-    }
-  }
-
-  // Завантажити більше зображень, збільшуючи номер поточної сторінки
-  loadMore = () => {
-    this.setState(prevState => ({
-      currentPage: prevState.currentPage + 1,
-    }));
-  };
-
-  // Обробка подання форми від компонента SearchBar
-  handleSubmit = query => {
+  const handleSubmit = query => {
     if (query.trim() === '') {
-      // Перевіряємо, чи форма не пуста
       toast.info('enter a search query.', {
         position: toast.POSITION.TOP_RIGHT,
       });
       return;
     }
-  
-    this.setState({
-      searchName: `${Date.now()}/${query}`,
-      images: [],
-      currentPage: 1,
-    });
+
+    setSearchName(`${Date.now()}/${query}`);
+    setImages([]);
+    setCurrentPage(1);
   };
 
-// Функція для оновлення стану images (скидання галереї)
-  resetGallery = () => {
-    this.setState({ images: [] });
+  const resetGallery = () => {
+    setImages([]);
   };
 
-  // Метод для додавання зображень
-  addImages = async () => {
-    const { searchName, currentPage } = this.state;
-    try {
-      this.setState({ isLoading: true }); // Встановлюємо прапорець завантаження
+  return (
+    <AppWrapper>
+      <ToastContainer transition={Slide} />
+      <SearchBar onSubmit={handleSubmit} onReset={resetGallery} />
+      {isLoading && <Loader />}
+      {images.length === 0 && (
+        <p
+          style={{
+            padding: 100,
+            textAlign: 'center',
+          }}
+        >
+          Немає зображень для відображення.
+        </p>
+      )}
+      {images.length > 0 && <ImageGallery images={images} />}
+      {images.length > 0 && totalPages !== currentPage && !isLoading && (
+        <Button onClick={loadMore} />
+      )}
+    </AppWrapper>
+  );
+};
 
-      // API-запит до Pixabay
-      const data = await API.getImages(searchName, currentPage);
-
-      if (data.hits.length === 0) {
-        // Видаляємо попередні нотифікації
-        toast.dismiss();
-    
-        // Виводимо нову нотифікацію про відсутність зображень
-        toast.info('Image was not found...', {
-          position: toast.POSITION.TOP_RIGHT,
-        });
-        return;
-      }
-
-      const normalizedImages = API.normalizedImages(data.hits);
-
-      this.setState(state => ({
-        images: [...state.images, ...normalizedImages], // Додаємо нові зображення
-        isLoading: false, // Вимикаємо прапорець завантаження
-        error: '', // Очищаємо повідомлення про помилку
-      }));
-    } catch (error) {
-      this.setState({ error: 'error' }); // Встановлюємо повідомлення про помилку
-    } 
-    finally {
-      this.setState({ isLoading: false }); // Вимикаємо прапорець завантаження незалежно від результату
-    }
-  };
-
-  render() {
-    const { images, isLoading, currentPage, totalPages } = this.state;
-
-    return (
-      <AppWrapper>
-        <ToastContainer transition={Slide} /> 
-        <SearchBar onSubmit={this.handleSubmit} onReset={this.resetGallery} /> 
-        {images.length > 0 ? (
-          <ImageGallery images={images} />
-        ) : (
-          <p
-            style={{
-              padding: 100,
-              textAlign: 'center',
-            }}
-          >
-            empty
-          </p>
-        )}
-        {isLoading && <Loader />}
-        {images.length > 0 && totalPages !== currentPage && !isLoading && (
-          <Button onClick={this.loadMore} />
-        )}
-      </AppWrapper>
-    );
-  }
-}
+export default App;

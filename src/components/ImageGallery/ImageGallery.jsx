@@ -11,3 +11,4 @@ export const ImageGallery = ({ images }) => {
     </ImageGalleryList>
   );
 };
+

@@ -78,7 +78,7 @@ export const App = () => {
             textAlign: 'center',
           }}
         >
-          Немає зображень для відображення.
+          empty
         </p>
       )}
       {images.length > 0 && <ImageGallery images={images} />}
